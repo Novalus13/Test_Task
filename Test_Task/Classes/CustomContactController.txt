@@ -11,7 +11,7 @@ public class CustomContactController {
     public String selectedContactId {get;set;}
     // Поле сортировки контактов
     public String sortOrder {get;set;}
-    // Упорядочывание 
+    // Порядок нарастания или уменьшения
     public String ascendingOrDescending;  
     // Отслеживание куда смещаются контакты
     private Integer counter = 0;  
