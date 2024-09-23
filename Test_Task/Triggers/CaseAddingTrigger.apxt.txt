@@ -1,0 +1,46 @@
+trigger CaseAddingTrigger on Contact (after insert) {
+   // триггер, чтобы после создания нового объекта Contact автоматически
+   // создавалось поле Case
+    if (Trigger.isAfter && Trigger.isInsert) {
+        List<Case> caseList = new List<Case>();
+        for (Contact contactItem: Trigger.New){
+           // Новый Case согласно ТЗ привязываем к новому контакту и аккаунту
+           // А так же присваем полям 'Status' и 'Origin' значения  'Working' и 'New Contact'
+            Case caseRec = new Case();             
+            caseRec.ContactId = contactItem.Id;
+            caseRec.AccountId = contactItem.AccountId;
+            caseRec.Status = 'Working';
+            caseRec.Origin = 'New Contact';
+            
+            // Поле Owner у Case должен быть таким же как Owner у аккаунта, 
+            // на которого ссылается контакт
+            List<Account> accountRecord = [SELECT OwnerId FROM Account WHERE Id = :contactItem.AccountId LIMIT 1];
+            if (AccountRecord.size() > 0) {
+                CaseRec.OwnerId = AccountRecord[0].OwnerId;
+            }
+				
+            // Устанавливаем значение поля в зависимости от Contact Level
+            switch on contactItem.Contact_Level__c {
+    			when 'Tertiary' {		
+        			CaseRec.Priority = 'Low';
+    			}	
+    			when 'Secondary' {	
+       				CaseRec.Priority = 'Medium';
+    			}
+    			when 'Primary' {
+       				CaseRec.Priority = 'High';
+    			}
+                //
+			}            
+            CaseList.add(CaseRec);  
+        }
+        
+        // Делаем проверку, чтобы не записывать пустые значения
+    	if (CaseList.size() > 0) {
+    		
+    	  	  insert CaseList;
+    		
+            } 
+   				}
+}
+   		
