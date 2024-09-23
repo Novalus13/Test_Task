@@ -1,0 +1,18 @@
+trigger CaseDelitingTrigger on Contact (before delete) {
+	if (Trigger.isDelete) {
+		List<Case> CaseList = new List<Case>();
+        for (Contact contItem: Trigger.Old) {            
+            // Устанавливаем записи для удаления
+            List<Case> CaseRec = [SELECT Id FROM Case WHERE ContactId = :contItem.Id];
+            CaseList.addAll(CaseRec);
+        }
+        
+		// удалить кроме delete
+        // По аналогии с добавлением кейса, если пусто, ничего не удаляем
+    	if (CaseList.size() > 0) {
+    		
+    	  	  delete CaseList;
+    		
+   		}
+	}
+}
