@@ -1,0 +1,93 @@
+@isTest
+public class TestCustomContactController {
+  static testmethod void testContactController() {
+  		// Имя с маленькой буквы
+        // Проверяем наш кастомный контроллер
+        CustomContactController testContactsManager = new CustomContactController();
+        
+        // Вызываем методы из класса ContactsManager      
+        testContactsManager.showingPopup();
+        Assert.isTrue(TestContactsManager.displayPopup);
+        testContactsManager.NewContact.FirstName = 'John';
+        testContactsManager.NewContact.LastName = 'Smith';
+        testContactsManager.NewContact.Email = 'testmail@yahoo.com';
+        testContactsManager.NewContact.Contact_Level__c = 'Secondary';
+        testContactsManager.saveNewContact();
+        // Проверяем закрыто ли окно Popup
+        Assert.isFalse(TestContactsManager.displayPopup);
+      	  
+      
+        // Проверяем работоспособность методов сортировки контактов
+        List<Contact> contacts = testContactsManager.getContacts();
+        Assert.areEqual(1, Contacts.size());
+        Assert.areEqual(1, TestContactsManager.totalSize);
+        testContactsManager.sortOrder = 'Name';
+        testContactsManager.sortByField();
+        testContactsManager.sortOrder = 'Email';
+        testContactsManager.sortByField();
+        
+        // Тест поиска среди контактов по тексту
+        testContactsManager.searchingText = 'John';
+        testContactsManager.searchContact();
+        Contacts = TestContactsManager.getContacts();
+        Assert.areEqual(1, Contacts.size());
+        testContactsManager.searchingText = 'Alex';
+        testContactsManager.searchContact();
+        Contacts = TestContactsManager.getContacts();
+        Assert.areEqual(0, Contacts.size());        
+        
+        // Тест контактов, которые были выбранны
+        // Выбираем все контакты
+        testContactsManager.searchingText = '';        
+        testContactsManager.searchContact();
+        Contacts = testContactsManager.getContacts();
+       // Проверка удаляются ли контакты из списка
+      	Assert.areEqual(1, Contacts.size());
+        testContactsManager.deleteSelectedContact();
+        testContactsManager.selectedContactId = Contacts[0].Id;
+        testContactsManager.deleteSelectedContact();        
+        List<Contact> contactRecord = [SELECT Id FROM Contact WHERE Id = :Contacts[0].Id LIMIT 1];
+        Assert.isTrue(contactRecord.size() == 0);
+        
+        // Проверяем адрес нового контакта  
+        Assert.areEqual('/apex/NewContactPage', TestContactsManager.NewContact().getUrl());        
+        
+        // Тестируем пагинацию
+        // создаем 15 контактов, чтобы проверить, что пагинация идет правильно
+        List<Contact> contactList = new List<Contact>();
+        for (Integer i = 0; i < 15; i++) {
+           ContactList.add(new Contact(FirstName = 'John' + i, LastName = 'Smith' + i, Email = 'testmail' + i + '@yahoo.com', Contact_Level__c = 'Secondary'));
+        }
+        insert contactList;
+        
+        // Проверяем соответствие страниц количеству контактов
+        testContactsManager.getContacts();
+        Assert.areEqual(2, testContactsManager.getTotalPages());
+        
+        // Проверяем getPageNumber количество страниц
+        Assert.areEqual(1, testContactsManager.getPageNumber());
+        
+        // Проверяем работу кнопки Next, что она перебросила юзера на вторую страницу
+        testContactsManager.Next();
+        Assert.areEqual(2, testContactsManager.getPageNumber());
+
+        // Проверяем работу кнопки Previous, что она перебросила юзера на первую (прошлую) страницу
+        testContactsManager.Previous();
+        Assert.areEqual(1, testContactsManager.getPageNumber());
+        
+        // Проверяем работу кнопки End
+        testContactsManager.End();
+        Assert.areEqual(2, testContactsManager.getPageNumber());
+        
+        
+        
+        // Тест метода выбора всех страниц
+        // Если удалили 5 контактов осталась одна страница 
+        ContactList = [SELECT Id FROM Contact LIMIT 5];
+        delete ContactList;
+        testContactsManager.getContacts();
+        Assert.areEqual(1, TestContactsManager.getTotalPages());        
+    }
+  
+        
+}
