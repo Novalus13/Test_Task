@@ -1,0 +1,183 @@
+public class CustomContactController {
+	//Создаем поля класса контроллера
+    // поле впслывающего окна popup
+    public Boolean displayPopup {get; set;}
+   // Поле создание нового контакта
+    public Contact NewContact {get;set;}
+    public List<Contact> Contacts {get;set;}
+   //  Поле текствового поиска
+    public String searchingText {get;set;}
+    // Поле выбранных контактовw
+    public String selectedContactId {get;set;}
+    // Поле сортировки контактов
+    public String sortOrder {get;set;}
+    // Упорядочывание 
+    public String ascendingOrDescending;  
+    // Отслеживание куда смещаются контакты
+    private Integer counter = 0;  
+    // пагинация, указываем сколько одновременно контактов отображется
+    private Integer listSize = 10;
+    // Указываем юзеру общий размер
+    public Integer totalSize {get;set;}
+    
+    //Конструктор класса-контроллера
+    public CustomContactController(){
+        // Присваем значение полю Contact
+        this.NewContact = new Contact();
+        // полю сортировки присваем строчное значение 'Name'
+        this.sortOrder = 'Name';
+        // Полю поиска текста присваеваем строчное значение
+        this.searchingText = '';
+        // Полю поиска избранного контакта присваеваем строчное значение
+        this.selectedContactId ='';
+        // Поле сортировки по возрастанию
+       	this.ascendingOrDescending = ' ASC ';
+        
+    }
+    
+    	// обращаемся к БД с помощью SOQL
+    private String stored(){
+         if (this.searchingText != '') {
+            return 
+                // Ищем любые строки FirstName и LastName, где будут попадаться значения John Smith, знаки процента
+                // указывают, что делается запрос на любые строки, где есть John Smith, даже если есть символы перед John или после
+                'WHERE FirstName LIKE \'%' + searchingText + '%\' ' + 'OR LastName LIKE \'%' + searchingText + '%\' ';
+
+            	        }
+        else{
+            return '';
+        }        
+    }
+    
+    // Запрос контактов
+    public List<Contact> getContacts(){
+        // запрашиваем из дб контакты
+        try {
+            List<Contact> Contacts = Database.query(
+                'SELECT Id, Name, Email, Contact_Level__c, AccountId, OwnerId, CreatedById, CreatedDate ' +
+                'FROM Contact ' + stored() +
+                'ORDER BY ' + sortOrder + ascendingOrDescending + 'NULLS LAST ' +
+                'LIMIT :listSize OFFSET :counter'
+            );
+    		//присваиваем значению полю totalSize
+            this.totalSize = Database.countQuery('SELECT Count() ' + 'FROM Contact ' + stored());
+            return Contacts;  
+        } 
+        // выкидываем исключение в поля ввода, если строка пустая
+        catch(System.Exception e) { 
+            ApexPages.addMessages(e);
+            totalSize = 0;
+            return null;
+        }
+    
+    }
+    
+    // Кнопка поиска контакта
+    public PageReference searchContact() {
+        
+        counter = 0;
+    	return null;
+    }
+
+    // Делаем упорядование
+    public void sortByField() { 
+        if(ascendingOrDescending == ' ASC ') {
+            ascendingOrDescending = ' DESC ';
+        }
+        else {
+            ascendingOrDescending = ' ASC ';
+        }        
+    }
+    
+    // Открытие нового контакта на новой странице
+    public PageReference NewContact() {
+		PageReference NewContactPage = new PageReference('/apex/NewContactPage');
+		NewContactPage.setRedirect(true);		
+		return NewContactPage;
+    }
+    
+    // Удаление выбранного контакта
+    public PageReference deleteSelectedContact() {
+       
+        if (selectedContactId == '') {            
+            
+            this.selectedContactId = System.currentPageReference().getParameters().get('ContactId');
+        }
+        try {
+        	
+            List<Contact> ContactRecords = [SELECT Id FROM Contact WHERE Id = :selectedContactId LIMIT 1];
+        	if (ContactRecords.size() > 0) {
+          		delete ContactRecords[0];                
+        	}
+            return null;
+        } catch(System.Exception e) {
+            ApexPages.addMessages(e);
+            return null;
+        }        
+    }
+    
+   	//обработка popup
+    //метод показа окна popup
+    public void showingPopup(){
+        displayPopup = true;
+    }
+   	
+    //метод закрывающий popup
+    public void ClosingPopup(){
+        displayPopup = false;
+    }
+    
+    //создаем новый контакт через popup или выкидываем ошибку
+    public PageReference saveNewContact(){
+       try {
+           // Сохраняем контакт записанный в окне Popup 
+           insert NewContact;
+            closingPopup();
+            return null;
+        } catch(System.Exception e) {
+            ApexPages.addMessages(e);
+            return null;
+        }
+    }
+    
+    // подгоняем пагинацию таблицы контактов
+     
+    public PageReference Beginning(){
+        counter =0;
+        return null;
+    }
+    
+    // Если юзер начал на кнопку назад
+   	public PageReference Previous() {
+      	counter -= listSize;
+      	return null;
+   	}
+
+    // Пользователь нажимат кнопку вперед
+   	public PageReference Next() { 
+      	counter += listSize;
+      	return null;
+   	}
+
+ 	// Пользователь нажимает кнопку в конец
+   	public PageReference End() { 
+      	counter = totalSize - math.mod(totalSize, listSize);
+      	return null;
+   	}
+   
+
+    
+    // Счетчик страниц
+    // Получаем все страницы
+   	public Integer getTotalPages() {
+      	if (math.mod(totalSize, listSize) > 0) {
+         	return totalSize/listSize + 1;
+      	} else {
+         	return (totalSize/listSize);
+      	}
+   	}
+    
+    // Текущая страница
+   	public Integer getPageNumber() {
+      	return counter/listSize + 1;
+   	}

@@ -1,0 +1,27 @@
+public class ContactControllerExtension {
+	// В данном случае мы создаем новый класс, который расширяет стандартный контроллер
+	// Это класс используются для того, чтобы в стандартный контроллер добавить кнопки Save и Cancel
+    private ApexPages.StandardController standController;
+    // здесь поля с пометкой Final для того, чтобы предотвратить какие либо изменения
+    // в стандартом для SF поле Contact
+    private final Contact contact;
+    
+    
+     // Конструктор класса
+    public ContactControllerExtension(ApexPages.StandardController standController) {
+        this.contact = (Contact)standController.getRecord();
+        this.standController = standController;
+    }
+
+    // Нажатие кнопки сохранить
+    public PageReference Save() {
+        standController.save();
+        return Page.ContactPage;
+    }
+    
+    // Нажатие кнопки отмена
+    public PageReference Cancel() {
+		standController.cancel();		
+		return Page.ContactPage;
+    }
+}
