@@ -48,7 +48,32 @@ public class CustomContactController {
             return '';
         }        
     }
+
+
+//обработка popup
+    //метод показа окна popup
+    public void showingPopup(){
+        displayPopup = true;
+    }
+   	
+    //метод закрывающий popup
+    public void ClosingPopup(){
+        displayPopup = false;
+    }
     
+    //создаем новый контакт через popup или выкидываем ошибку
+    public PageReference saveNewContact(){
+       try {
+           // Сохраняем контакт записанный в окне Popup 
+           insert NewContact;
+            closingPopup();
+            return null;
+        } catch(System.Exception e) {
+            ApexPages.addMessages(e);
+            return null;
+        }
+    }
+
     // Запрос контактов
     public List<Contact> getContacts(){
         // запрашиваем из дб контакты
@@ -116,29 +141,7 @@ public class CustomContactController {
         }        
     }
     
-   	//обработка popup
-    //метод показа окна popup
-    public void showingPopup(){
-        displayPopup = true;
-    }
    	
-    //метод закрывающий popup
-    public void ClosingPopup(){
-        displayPopup = false;
-    }
-    
-    //создаем новый контакт через popup или выкидываем ошибку
-    public PageReference saveNewContact(){
-       try {
-           // Сохраняем контакт записанный в окне Popup 
-           insert NewContact;
-            closingPopup();
-            return null;
-        } catch(System.Exception e) {
-            ApexPages.addMessages(e);
-            return null;
-        }
-    }
     
     // подгоняем пагинацию таблицы контактов
      
