@@ -1,0 +1,47 @@
+@isTest
+public class ExtensionContollerTest {
+	static testmethod void testContactControllerExtensionSave() {
+        // Создаем тестовый контакт
+        Contact testContact = new Contact();
+        testContact.FirstName = 'John';
+        testContact.LastName = 'Smith';
+        testContact.Email = 'testmail@yahoo.com';
+        testContact.Contact_Level__c = 'Secondary';
+
+        // Проверяем расширенный контроллер
+        ApexPages.StandardController StandardControllerContact = new ApexPages.StandardController(testContact);
+	    ContactControllerExtension ControllerExtension  = new ContactControllerExtension(StandardControllerContact);
+        
+        ControllerExtension.Save();
+                
+        // Получаем из ДБ контакт, чтобы проверить, сохранилась ли запись после нажатия кнопки Save
+        List<Contact> contactRecord = [SELECT Id FROM Contact WHERE Id = :StandardControllerContact.getId() LIMIT 1];
+        Assert.isTrue(contactRecord.size() > 0);
+        
+        // Проверяем метод отссылки страницы PageReference
+        Assert.areEqual('/apex/contactpage', ControllerExtension.Cancel().getUrl());
+
+   }
+    
+    static testmethod void testContactControllerExtensionCancel() {
+        // Создаем тетовый контакт
+        Contact newContact = new Contact();
+        NewContact.FirstName = 'John';
+        NewContact.Email = 'testmail@yahoo.com';
+        NewContact.Contact_Level__c = 'Secondary';
+
+        // проверяем расширенный контроллер
+        ApexPages.StandardController StandardControllerContact = new ApexPages.StandardController(newContact);
+	    ContactControllerExtension ControllerExtension  = new ContactControllerExtension(StandardControllerContact);
+		
+        ControllerExtension.Cancel();
+        
+        // Достаем контакт из ДБ, чтобы проверить, что после нажатия кнопки отмены ничего не записалось
+        List<Contact> contactRecord = [SELECT Id FROM Contact WHERE Id = :StandardControllerContact.getId() LIMIT 1];
+        Assert.isTrue(ContactRecord.size() == 0);
+        
+        // Проверяем совпадение юрл
+       	Assert.areEqual('/apex/contactsmanagerpage', ControllerExtension.Cancel().getUrl()); 
+        system.debug(ControllerExtension.Cancel().getUrl());
+    }
+}
