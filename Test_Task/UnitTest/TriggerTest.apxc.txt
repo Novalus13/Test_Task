@@ -1,0 +1,144 @@
+@isTest
+public class TriggerTest {
+	// Тестируем правильно ли работает зависимость поле Priority у нового Case от того,
+	//  какое значение было выбрано в поле Contact Level 
+    static testmethod void testAddingCaseTriggerHigh() {
+        // Создаем тестового пользователя
+        List<User> User = [SELECT Id FROM User LIMIT 1];        
+
+        // Создаем тестовый аккаунт
+        Account testAccount = new Account();        
+        TestAccount.Name = 'Account Novalus';
+        if (user.size() > 0) {
+            TestAccount.OwnerId = User[0].Id;
+        }
+        insert testAccount;        
+        Assert.AreEqual(1, [SELECT Id FROM Account].size());
+        
+        
+        // Создаем тестовый контакт
+        // С приоритетом Primary
+        Contact TestContact = new Contact();
+        testContact.FirstName = 'John';
+        testContact.LastName = 'Smith';
+        testContact.AccountId = TestAccount.Id;
+        testContact.Email = 'testmail@yahoo.com';
+        testContact.Contact_Level__c = 'Primary';
+        insert TestContact;
+        Assert.areEqual(1, [SELECT Id FROM Contact].size());
+        
+        // Получаем из ДБ Case
+        List<Case> CaseRecord = [SELECT Id, AccountId, Status, Origin, OwnerId, Priority FROM Case WHERE ContactId = :TestContact.Id LIMIT 1];
+        Assert.isTrue(CaseRecord.size() > 0);
+        if (CaseRecord.size() > 0) {
+            Assert.areEquals(CaseRecord[0].AccountId, TestContact.AccountId);
+            // Данными стандартными методами проверяем соотвествует ли значению True Status,Origin,Priority
+            Assert.isTrue(CaseRecord[0].Status == 'Working');
+        	Assert.isTrue(CaseRecord[0].Origin == 'New Contact');            
+            Assert.areEqual(CaseRecord[0].OwnerId, testAccount.OwnerId);
+            Assert.isTrue(CaseRecord[0].Priority == 'High');
+        }
+    }
+    // По точно такому же принципу проверяем значения Medium и Low
+    static testmethod void testAddCaseTriggerMedium() {
+        
+        List<User> User = [SELECT Id FROM User LIMIT 1];        
+
+        
+        Account TestAccount = new Account();        
+        TestAccount.Name = 'Account Novalus';
+        if (user.size() > 0) {
+            TestAccount.OwnerId = User[0].Id;
+        }
+        insert TestAccount;
+        Assert.areEqual(1, [SELECT Id FROM Account].size());
+        
+		
+        Contact TestContact = new Contact();
+        testContact.FirstName = 'John';
+        testContact.LastName = 'Smith';
+        testContact.AccountId = TestAccount.Id;
+        testContact.Email = 'testmail@yahoo.com';
+        testContact.Contact_Level__c = 'Secondary';
+        insert TestContact;
+        Assert.areEqual(1, [SELECT Id FROM Contact].size());
+        
+        
+        List<Case> CaseRecord = [SELECT Id, AccountId, Status, Origin, OwnerId, Priority FROM Case WHERE ContactId = :TestContact.Id LIMIT 1];
+        Assert.isTrue(CaseRecord.size() > 0);
+        if (CaseRecord.size() > 0) {
+            Assert.areEqual(CaseRecord[0].AccountId, TestContact.AccountId);
+            Assert.isTrue(CaseRecord[0].Status == 'Working');
+        	Assert.isTrue(CaseRecord[0].Origin == 'New Contact');            
+            Assert.areEqual(CaseRecord[0].OwnerId, TestAccount.OwnerId);
+            Assert.isTrue(CaseRecord[0].Priority == 'Medium');
+        }
+    }
+    
+    static testmethod void testAddCaseTriggerLow() {
+      
+        List<User> User = [SELECT Id FROM User LIMIT 1];        
+
+        Account TestAccount = new Account();        
+        TestAccount.Name = 'Account Novalus';
+        if (user.size() > 0) {
+            TestAccount.OwnerId = User[0].Id;
+        }
+        insert testAccount;
+        Assert.areEqual(1, [SELECT Id FROM Account].size());
+        
+        Contact TestContact = new Contact();
+        testContact.FirstName = 'John';
+        testContact.LastName = 'Smith';
+        testContact.AccountId = TestAccount.Id;
+        testContact.Email = 'testmail@yahoo.com';
+        testContact.Contact_Level__c = 'Tertiary';
+        insert TestContact;
+        Assert.areEqual(1, [SELECT Id FROM Contact].size());
+        
+        List<Case> CaseRecord = [SELECT Id, AccountId, Status, Origin, OwnerId, Priority FROM Case WHERE ContactId = :TestContact.Id LIMIT 1];
+        Assert.isTrue(CaseRecord.size() > 0);
+        if (CaseRecord.size() > 0) {
+            Assert.areEqual(CaseRecord[0].AccountId, TestContact.AccountId);
+            Assert.isTrue(CaseRecord[0].Status == 'Working');
+        	Assert.isTrue(CaseRecord[0].Origin == 'New Contact');
+            
+            Assert.areEqual(CaseRecord[0].OwnerId, TestAccount.OwnerId);
+            Assert.isTrue(CaseRecord[0].Priority == 'Low');
+        }
+    }
+
+    // Проверяем работу удаления Case
+    static testmethod void testDelCaseTrigger() {
+        // 
+        List<User> User = [SELECT Id FROM User LIMIT 1];
+
+        // Создаем новый аккаунт
+        Account TestAccount = new Account();        
+        TestAccount.Name = 'Account Novalus';
+        if (user.size() > 0) {
+            TestAccount.OwnerId = User[0].Id;
+        }
+        insert TestAccount;
+        Assert.areEqual(1, [SELECT Id FROM Account].size());
+        
+        // Создаем тестовый Contact
+        Contact testContact = new Contact();
+        testContact.FirstName = 'John';
+        testContact.LastName = 'Smith';
+        testContact.AccountId = TestAccount.Id;
+        testContact.Email = 'testmail@yahoo.com';
+        testContact.Contact_Level__c = 'Secondary';
+        insert TestContact;
+        Assert.areEqual(1, [SELECT Id FROM Contact].size());
+        
+        // Удаляем Contact
+        delete TestContact; 
+        List<Contact> ContactRecord = [SELECT Id FROM Contact WHERE Id = :TestContact.Id LIMIT 1];
+        Assert.isTrue(ContactRecord.size() == 0);
+        
+        // Удаляем Case
+        List<Case> CaseRecords = [SELECT Id FROM Case WHERE ContactId = :TestContact.Id];
+        Assert.isTrue(CaseRecords.size() == 0);
+    }
+}
